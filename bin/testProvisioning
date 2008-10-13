@@ -1,0 +1,39 @@
+#!/usr/bin/perl
+#
+# $Id$
+# $URL$
+#
+
+use strict;
+use FindBin;
+use Data::Dumper;
+use lib "$FindBin::Bin/../lib/perl";
+use Provisioning;
+
+if (@ARGV < 2) {
+	warn "testProvisioning <username> <password>\n";
+    exit 1;
+}
+my $prov = new Provisioning($ARGV[0], $ARGV[1], 'apidb.org');
+
+my @users = $prov->retrieveAllUsers;
+
+for my $user (@users) {
+    #print $user->xml;
+    print $user->userName . ", admin: " . $user->admin;
+    print "\n\n";
+}
+
+print "\n---------------\n";
+
+my @users = $prov->retrieveUser('weili1');
+
+
+for my $user (@users) {
+   # print $user->xml;
+    print "UserName: " . $user->userName;
+    print "\n\n";
+}
+#print "\nxxxxxxxxxxxxxxxxxxx\n";
+#my $user = $prov->retrieveUser('aurreco');
+#print $user->xml;
