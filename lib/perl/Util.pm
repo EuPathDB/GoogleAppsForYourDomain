@@ -28,7 +28,7 @@ sub _feedToEntries {
 sub _attrValueForFirstPath {
     my ($twig, $att, $path) = @_;
     my ($elt) = $twig->findnodes($path);
-    my $txt = $elt->{'att'}->{'href'};
+    my $txt = $elt->{'att'}->{$att};
     $twig->purge;
     return $txt;
 }
