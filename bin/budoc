@@ -1,0 +1,57 @@
+#!/usr/bin/perl -w
+
+# backup Google documents (spreadsheets, word proc. docs, presentations)
+# that are readable by authenticating user. Only backups files modified since
+# last backup. Format of backups are .doc, .xls, and .ppt
+
+#
+# $Id: testCalendar 24133 2008-10-13 13:24:33Z mheiges $
+# $URL$
+#
+
+use strict;
+use FindBin;
+use Data::Dumper;
+use lib "$FindBin::Bin/../lib/perl";
+use Date::Manip;
+use DocumentApp;
+
+if (@ARGV < 3) {
+	warn "budoc <username> <password> <backup/directory>\n";
+    exit 1;
+}
+
+my $now = Date_ConvTZ(ParseDate("now"), undef, 'Z');
+Date_Init("TZ=Z"); # redefine timezone to same as Google's timestamps
+
+my $docApp = new DocumentApp($ARGV[0], $ARGV[1], 'apidb.org');
+my $buDir = $ARGV[2];
+
+die "'$buDir' not found\n" unless ( -d $buDir);
+die "'$buDir' not writable\n" unless ( -w $buDir);
+
+my %expFormat = (
+    document => 'doc',
+    spreadsheet => 'xls',
+    presentation => 'ppt',
+);
+
+my $lastBU;
+if (-f "$buDir/.lastrun") {
+  open (LAST, "$buDir/.lastrun") || die "could not open $buDir/.lastrun to read timestamp. $!\n";
+  while (<LAST>) { chomp; $lastBU = $_; }
+}
+
+my @docs = $docApp->retrieveAllDocuments();
+for my $doc (@docs) {
+    
+    next if ( Date_Cmp($doc->updated, $lastBU) < 0);
+    
+    print "authorName: " . $doc->documentName . "\n";
+    print "document title: " . $doc->title, "\n";
+    my $type = $doc->type;    
+    $docApp->export($doc, $expFormat{$type}, $buDir);
+}
+
+open (LAST, ">$buDir/.lastrun") || die "could not open $buDir/.lastrun to record timestamp. $!\n";
+print LAST UnixDate($now, "%O%Z");

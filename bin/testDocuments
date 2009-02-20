@@ -1,0 +1,60 @@
+#!/usr/bin/perl
+
+#
+# $Id: testCalendar 24133 2008-10-13 13:24:33Z mheiges $
+# $URL$
+#
+
+use strict;
+use FindBin;
+use Data::Dumper;
+use lib "$FindBin::Bin/../lib/perl";
+use DocumentApp;
+
+if (@ARGV < 2) {
+	warn "testDocument <username> <password>\n";
+    exit 1;
+}
+
+my $docApp = new DocumentApp($ARGV[0], $ARGV[1], 'apidb.org');
+
+my @docs = $docApp->retrieveAllDocuments();
+
+for my $doc (@docs) {
+    #if ($doc->id eq 'dcq6mtm_38gbh87nfz') {
+        print $doc->xml;
+        print "authorName: " . $doc->documentName . "\n";
+        print "aclURL: " . $doc->aclUrl, "\n";
+        print "editUrl: " . $doc->editUrl, "\n";
+        print "document ID: " . $doc->id, "\n";
+        print "document title: " . $doc->title, "\n";
+        print "document type: " . $doc->type, "\n";
+        
+        $docApp->export($doc, 'doc', '/Users/mheiges/Documents/GoogleDocsBackup');
+    #}
+}
+
+__END__
+print "////////////////////////////////////////////////////////\n";
+
+my @docs = $docApp->retrieveOwnDocuments();
+
+for my $doc (@docs) {
+   # print $doc->xml;
+    print "authorName: " . $doc->documentName . "\n";
+    print "aclURL: " . $doc->aclUrl, "\n";
+    print "editUrl: " . $doc->editUrl, "\n";
+    print "document ID: " . $doc->id, "\n";
+
+}
+__END__
+
+print "getting single document\n";
+my $doc = $docApp->retrieveDocumentFromAll('yet another document');
+
+print $doc->aclUrl, "\n";
+    print "ACL: " . $doc->acl;
+
+#my $res = $doc->addUserToAcl('joeuser@apidb.org');
+#rint $res->content . "\n";
+#my $docs = $docApp->retrieveDocumentFromOwn();
