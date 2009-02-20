@@ -11,15 +11,16 @@ use Client;
 use Data::Dumper;
 use Util;
 
-my $client;
+my $docClient;
+my $spreadSheetClient;
 my @alldocuments;
 
 my $DEBUG = 1;
 
 sub new {
     my ($class, $adminUser, $adminPasswd, $domain) = @_;
-    my $service = 'writely';
-    $client = new Client($adminUser, $adminPasswd, $domain, $service);
+    $docClient = new Client($adminUser, $adminPasswd, $domain, 'writely');
+    $spreadSheetClient = new Client($adminUser, $adminPasswd, $domain, 'wise');
     my $self = bless {}, $class;
     return $self;
 }  
@@ -48,12 +49,12 @@ sub _retrieveDocumentList {
 
     my $allDocUrl = "http://docs.google.com/feeds/documents/private/full$whose";
 
-    $DEBUG && warn "GETting $allDocUrl\n";
+    $DEBUG && warn "GET $allDocUrl\n";
     
-    my $req = $client->_GET($allDocUrl);
+    my $req = $docClient->_GET($allDocUrl);
     if ($req->is_success) {
       my $feed = $req->content;
-      $self->{$whose} = Util::_feedToEntries(\$feed, 'Document', $client);
+      $self->{$whose} = Util::_feedToEntries(\$feed, 'Document', $docClient);
       return @{$self->{$whose}};
     }
     die "Failed: " . $req->status_line . "\nfor '$allDocUrl'\n";
@@ -62,14 +63,42 @@ sub _retrieveDocumentList {
 
 
 sub export {
-    my ($self, $document, $format) = @_;
+    my ($self, $document, $format, $directory) = @_;
     my $type = $document->type;
-    my $exportUrl = 'http://docs.google.com/feeds/download/' .
+    
+    my %fmcmd = (
+      'xls'  => 4,
+      'csv'  => 5,
+      'pdf'  => 12,
+      'ods'  => 13,
+      'tsv'  => 23,
+      'html' => 102,
+    );
+    
+    my %expUrls = (
+      'document' => 'http://docs.google.com/feeds/download/' .
                      $type . 's/Export?docID=' . $document->id .
-                    '&exportFormat=' . $format;
-    my $directory = '/tmp';
-    my $filename = $document->title;
-    $client->_GETFILE($exportUrl, $directory, $filename);
+                    '&exportFormat=' . $format,
+
+      'presentation' => 'http://docs.google.com/feeds/download/' .
+                        $type . 's/Export?docID=' . $document->id .
+                       '&exportFormat=' . $format,
+
+      'spreadsheet' => 'http://spreadsheets.google.com/feeds/download/' .
+                        $type . 's/Export?key=' . $document->id .
+                       '&fmcmd=' . $fmcmd{$format},
+    );
+    
+    my $filename = $document->title . '.' . $format;
+
+    $DEBUG && warn "exporting to $filename\n";
+    $DEBUG && warn "from " . $expUrls{$type} . "\n";
+
+    if ($type eq 'spreadsheet') {
+        $spreadSheetClient->_GETFILE($expUrls{$type}, $directory, $filename);
+    } else {
+        $docClient->_GETFILE($expUrls{$type}, $directory, $filename);
+    }
 }
 
 

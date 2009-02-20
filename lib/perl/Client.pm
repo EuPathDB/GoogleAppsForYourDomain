@@ -36,8 +36,14 @@ sub authkey() {
 
     $ua->agent("AgentName/0.1 " . $ua->agent);
 
+    if ($self->{service} eq 'wise') {
+       $url = 'https://spreadsheets.google.com/accounts/ClientLogin';
+    } else {
+       $url = 'https://www.google.com/accounts/ClientLogin';
+    }
+
     my $res = $ua->post(
-       'https://www.google.com/accounts/ClientLogin',
+       $url,
        {
          accountType => 'HOSTED_OR_GOOGLE',
          Email       => $self->{email},
@@ -110,15 +116,12 @@ sub _GETFILE {
       sub {
         unless (defined $file) {
             my $res = $_[1];
-            print "file0 $file\n";
             $file = $filename;
-            print "file1 $file\n";
             if (defined $directory) {
                 require File::Spec;
                 $file = File::Spec->catfile($directory, $file);
             }
             open(FILE, ">$file") || die "Can't open $file: $!\n";
-            warn "saving to '$file'";
             binmode FILE;
             $length = $_[1]->content_length;
         }
@@ -127,8 +130,6 @@ sub _GETFILE {
       }
     );
     
-    print "_GETFILE status " . $res->status_line . "\n";
-    print $res->content;
     if (fileno(FILE)) {
       close(FILE) || die "Can't write to $file: $!\n";
     }
