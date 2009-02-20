@@ -50,13 +50,14 @@ for my $doc (@docs) {
       next unless ($doc->id eq $docIdReq);
     }
 
-    next if ( Date_Cmp($doc->updated, $lastBU) < 0);
+    my ($updated) = $doc->updated =~ m/^(.+)[A-Z]+$/; 
+    next if ( Date_Cmp($updated, $lastBU) < 0);
     
-    print "authorName: " . $doc->documentName . "\n";
     print "document title: " . $doc->title, "\n";
     my $type = $doc->type;    
     $docApp->export($doc, $expFormat{$type}, $buDir);
 }
 
 open (LAST, ">$buDir/.lastrun") || die "could not open $buDir/.lastrun to record timestamp. $!\n";
-print LAST UnixDate($now, "%O%Z");
+print LAST UnixDate($now, "%Y-%m-%dT%H:%M:%S");
+
