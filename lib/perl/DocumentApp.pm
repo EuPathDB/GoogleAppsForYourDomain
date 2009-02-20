@@ -74,7 +74,7 @@ sub export {
       'tsv'  => 23,
       'html' => 102,
     );
-    
+
     my %expUrls = (
       'document' => 'http://docs.google.com/feeds/download/' .
                      $type . 's/Export?docID=' . $document->id .
@@ -86,7 +86,7 @@ sub export {
 
       'spreadsheet' => 'http://spreadsheets.google.com/feeds/download/' .
                         $type . 's/Export?key=' . $document->id .
-                       '&fmcmd=' . $fmcmd{$format},
+                       '&fmcmd=' . ($fmcmd{$format} || ''),
     );
     
     my $filename = $document->title . '.' . $format;
