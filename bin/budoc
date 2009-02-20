@@ -17,7 +17,7 @@ use Date::Manip;
 use DocumentApp;
 
 if (@ARGV < 3) {
-	warn "budoc <username> <password> <backup/directory>\n";
+	warn "budoc <username> <password> <backup/directory> [optional doc ID]\n";
     exit 1;
 }
 
@@ -26,6 +26,7 @@ Date_Init("TZ=Z"); # redefine timezone to same as Google's timestamps
 
 my $docApp = new DocumentApp($ARGV[0], $ARGV[1], 'apidb.org');
 my $buDir = $ARGV[2];
+my $docIdReq = $ARGV[3];
 
 die "'$buDir' not found\n" unless ( -d $buDir);
 die "'$buDir' not writable\n" unless ( -w $buDir);
@@ -44,7 +45,11 @@ if (-f "$buDir/.lastrun") {
 
 my @docs = $docApp->retrieveAllDocuments();
 for my $doc (@docs) {
-    
+
+    if (defined $docIdReq) {
+      next unless ($doc->id eq $docIdReq);
+    }
+
     next if ( Date_Cmp($doc->updated, $lastBU) < 0);
     
     print "authorName: " . $doc->documentName . "\n";
