@@ -110,6 +110,14 @@ sub title {
     );
 }
 
+sub updated {
+    my ($self) = @_;
+    return Util::_firstValueForFirstPath(
+      $self->{'entryTwig'},
+      '/entry/updated'
+    );
+}
+
 sub xml {
     $_[0]->{entryTwig}->toString;
 }
