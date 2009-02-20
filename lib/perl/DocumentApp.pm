@@ -15,7 +15,7 @@ my $docClient;
 my $spreadSheetClient;
 my @alldocuments;
 
-my $DEBUG = 1;
+my $DEBUG = 0;
 
 sub new {
     my ($class, $adminUser, $adminPasswd, $domain) = @_;
