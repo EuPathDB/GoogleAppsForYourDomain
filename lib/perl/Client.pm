@@ -105,7 +105,7 @@ sub _POST {
 sub _GETFILE {
     my ($self, $url, $directory, $filename) = @_;
 
-    $filename =~ s/([^a-zA-Z0-9_\.\-\+\~])/sprintf "\\x%02x", ord($1)/ge;
+    $filename =~ s/([^a-zA-Z0-9_\.\-\+\~\ \?])/sprintf "%%%02x", ord($1)/ge;
 
     my $file;
     my $length;
