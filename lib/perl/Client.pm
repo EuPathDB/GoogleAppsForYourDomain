@@ -11,7 +11,7 @@ use XML::Twig::XPath;
 use Calendar;
 use Document;
 
-my $DEBUG = 1;
+my $DEBUG = 0;
 
 sub new {
     my ($class, $adminUser, $adminPasswd, $domain, $service) = @_;
@@ -32,7 +32,7 @@ sub new {
 
 sub authkey() {
     my ($self) = @_;
-    return $self->{authkey} if ($self->{authkey} ne '');
+    return $self->{authkey} if (defined $self->{authkey} && $self->{authkey} ne '');
 
     $ua->agent("AgentName/0.1 " . $ua->agent);
 
@@ -121,17 +121,21 @@ sub _GETFILE {
                 require File::Spec;
                 $file = File::Spec->catfile($directory, $file);
             }
+            $DEBUG && print "saving to $file\n";
             open(FILE, ">$file") || die "Can't open $file: $!\n";
             binmode FILE;
-            $length = $_[1]->content_length;
         }
         print FILE $_[0] or die "Can't write to $file: $!\n";
         $size += length($_[0]);
       }
     );
-    
+
     if (fileno(FILE)) {
       close(FILE) || die "Can't write to $file: $!\n";
+    }
+
+    if (my $xdied = $res->header("X-Died")) {
+        print "\nAborted\n$xdied\n";
     }
 }
 
