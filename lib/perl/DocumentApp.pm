@@ -31,7 +31,6 @@ sub retrieveAllDocuments {
 }
 
 sub retrieveOwnDocuments {
-    # currently no distinction from all documents
     $_[0]->_retrieveDocumentList('/-/mine');
 }
 
