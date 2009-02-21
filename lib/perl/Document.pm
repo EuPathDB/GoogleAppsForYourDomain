@@ -23,7 +23,7 @@ sub new {
     return $self;
 }  
 
-sub documentName { $_[0]->authorName }
+sub documentName { $_[0]->title }
 sub authorName {
     my ($self) = @_;
     return Util::_firstValueForFirstPath($self->{'entryTwig'}, '/entry/author/name');
@@ -115,6 +115,14 @@ sub updated {
     return Util::_firstValueForFirstPath(
       $self->{'entryTwig'},
       '/entry/updated'
+    );
+}
+
+sub published {
+    my ($self) = @_;
+    return Util::_firstValueForFirstPath(
+      $self->{'entryTwig'},
+      '/entry/published'
     );
 }
 
