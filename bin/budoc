@@ -53,7 +53,7 @@ for my $doc (@docs) {
     my ($updated) = $doc->updated =~ m/^(.+)[A-Z]+$/; 
     next if ( Date_Cmp($updated, $lastBU) < 0);
     
-    print "document title: " . $doc->title, "\n";
+    print $doc->title, "\n";
     my $type = $doc->type;    
     $docApp->export($doc, $expFormat{$type}, $buDir);
 }
