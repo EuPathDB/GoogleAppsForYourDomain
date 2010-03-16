@@ -14,7 +14,11 @@ use FindBin;
 use Data::Dumper;
 use lib "$FindBin::Bin/../lib/perl";
 use Date::Manip;
+use File::Path;
 use DocumentApp;
+
+# number of rotated backup dirs to maintain
+my $rotate = 4;
 
 if (@ARGV < 3) {
 	warn "budoc <username> <password> <backup/directory> [optional doc ID]\n";
@@ -43,6 +47,7 @@ if (-f "$buDir/.lastrun") {
   while (<LAST>) { chomp; $lastBU = $_; }
 }
 
+my $didRotate = 0;
 my @docs = $docApp->retrieveAllDocuments();
 for my $doc (@docs) {
 
@@ -52,12 +57,33 @@ for my $doc (@docs) {
 
     my ($updated) = $doc->updated =~ m/^(.+)[A-Z]+$/; 
     next if ( Date_Cmp($updated, $lastBU) < 0);
-    
+
+    $didRotate = rotateBackups($buDir, $rotate) if ! $didRotate;
+
     print $doc->title, "\n";
-    my $type = $doc->type;    
-    $docApp->export($doc, $expFormat{$type}, $buDir);
+    my $type = $doc->type;
+    
+    $docApp->export($doc, $expFormat{$type}, $buDir . '/1');
 }
 
 open (LAST, ">$buDir/.lastrun") || die "could not open $buDir/.lastrun to record timestamp. $!\n";
 print LAST UnixDate($now, "%Y-%m-%dT%H:%M:%S");
 
+sub rotateBackups {
+    my ($buDir, $rotate) = @_;
+    
+    return if (! $buDir || $buDir eq '' || $buDir eq '/');
+    my $maxDir = $buDir . '/' . $rotate;
+    if (-d $maxDir) {
+        rename ($maxDir, $maxDir . '_')  || die "can not rename '$maxDir' to ${maxDir}_\n";
+    }
+    File::Path::rmtree($maxDir . '_') if (-d $maxDir . '_');
+    for (my $i = $rotate -1; $i > 0; $i--) {
+        my $back = $buDir . '/' . $i . '/';
+        my $dest = $buDir . '/' . ($i +1);
+        if (-d $buDir . '/' . $i) {
+            system("rsync -a --link-dest=$back $back $dest");
+        }
+    }
+    return 1;
+}

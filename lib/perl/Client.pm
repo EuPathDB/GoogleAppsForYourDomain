@@ -125,6 +125,9 @@ sub _GETFILE {
             }
 
             $DEBUG && print "saving to $file\n";
+            $DEBUG && print "unlinking $file\n";
+
+            unlink $file if (-f $file);
             open(FILE, ">$file") || die "Can't open $file: $!\n";
             binmode FILE;
         }
