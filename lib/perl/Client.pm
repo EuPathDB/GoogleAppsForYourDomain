@@ -37,10 +37,13 @@ sub authkey() {
     $ua->agent("AgentName/0.1 " . $ua->agent);
 
     if ($self->{service} eq 'wise') {
-       $url = 'https://spreadsheets.google.com/accounts/ClientLogin';
+       $url = 'https://www.google.com/accounts/ClientLogin';
+#       $url = 'https://spreadsheets.google.com/accounts/ClientLogin';
     } else {
        $url = 'https://www.google.com/accounts/ClientLogin';
     }
+    
+    $DEBUG && warn "login url: $url\n";
 
     my $res = $ua->post(
        $url,
@@ -54,7 +57,7 @@ sub authkey() {
      );
     
     if ( ! $res->is_success) {
-        warn "failed to login to google", $res->status_line, "\n";
+        warn "failed to login to google: ", $res->status_line, "\n";
         return;
     }
     
@@ -125,7 +128,6 @@ sub _GETFILE {
             }
 
             $DEBUG && print "saving to $file\n";
-            $DEBUG && print "unlinking $file\n";
 
             unlink $file if (-f $file);
             open(FILE, ">$file") || die "Can't open $file: $!\n";
