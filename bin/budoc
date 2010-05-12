@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w
 
+# change on old copy
 # backup Google documents (spreadsheets, word proc. docs, presentations)
 # that are readable by authenticating user. Only backups files modified since
 # last backup. Format of backups are .doc, .xls, and .ppt
