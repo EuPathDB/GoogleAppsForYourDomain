@@ -19,9 +19,13 @@ if (@ARGV < 2) {
 my $docApp = new DocumentApp($ARGV[0], $ARGV[1], 'apidb.org');
 
 my @docs = $docApp->retrieveAllDocuments();
+#my @docs = $docApp->retrieveAllProcessorDocuments();
+#my @docs = $docApp->retrieveAllSpreadsheets();
+#my @docs = $docApp->retrieveAllDrawings();
+#my @docs = $docApp->retrieveAllPresentations();
 
 for my $doc (@docs) {
-    #if ($doc->id eq 'dcq6mtm_38gbh87nfz') {
+    #if ($doc->id eq '0AuqHWyftwi_ddEJ2YjRmS1BkQnV6R1BWVGhLM1o3cEE') {
         print $doc->xml;
         print "authorName: " . $doc->documentName . "\n";
         print "aclURL: " . $doc->aclUrl, "\n";
@@ -30,7 +34,7 @@ for my $doc (@docs) {
         print "document title: " . $doc->title, "\n";
         print "document type: " . $doc->type, "\n";
         
-        $docApp->export($doc, 'doc', '/Users/mheiges/Documents/GoogleDocsBackup');
+    #    $docApp->export($doc, 'doc', '/home/mheiges/GoogleAppsForYourDomain/bu');
     #}
 }
 
