@@ -1,4 +1,5 @@
 # Manage Google Document App.
+# http://code.google.com/apis/documents/docs/2.0/developers_guide_protocol.html
 #
 # $Id: DocumentApp.pm 24133 2008-10-13 13:24:33Z mheiges $
 # $URL$
@@ -25,9 +26,25 @@ sub new {
     return $self;
 }  
 
-
+# all types of documents: Processor, Spreadsheets, Drawings, Presentations
 sub retrieveAllDocuments {
-    $_[0]->_retrieveDocumentList('private');
+    $_[0]->_retrieveDocumentList('/');
+}
+
+sub retrieveAllProcessorDocuments {
+    $_[0]->_retrieveDocumentList('/-/document');
+}
+
+sub retrieveAllSpreadsheets {
+    $_[0]->_retrieveDocumentList('/-/spreadsheet');
+}
+
+sub retrieveAllDrawings {
+    $_[0]->_retrieveDocumentList('/-/drawing');
+}
+
+sub retrieveAllPresentations {
+    $_[0]->_retrieveDocumentList('/-/presentation');
 }
 
 sub retrieveOwnDocuments {
@@ -46,7 +63,7 @@ sub _retrieveDocumentList {
 
     return  @{$self->{$whose}} if $self->{$whose};
 
-    my $allDocUrl = "http://docs.google.com/feeds/documents/private/full$whose";
+    my $allDocUrl = "https://docs.google.com/feeds/documents/private/full$whose";
 
     $DEBUG && warn "GET $allDocUrl\n";
     
@@ -75,15 +92,15 @@ sub export {
     );
 
     my %expUrls = (
-      'document' => 'http://docs.google.com/feeds/download/' .
+      'document' => 'https://docs.google.com/feeds/download/' .
                      $type . 's/Export?docID=' . $document->id .
                     '&exportFormat=' . $format,
 
-      'presentation' => 'http://docs.google.com/feeds/download/' .
+      'presentation' => 'https://docs.google.com/feeds/download/' .
                         $type . 's/Export?docID=' . $document->id .
                        '&exportFormat=' . $format,
 
-      'spreadsheet' => 'http://spreadsheets.google.com/feeds/download/' .
+      'spreadsheet' => 'https://spreadsheets.google.com/feeds/download/' .
                         $type . 's/Export?key=' . $document->id .
                        '&fmcmd=' . ($fmcmd{$format} || ''),
     );
