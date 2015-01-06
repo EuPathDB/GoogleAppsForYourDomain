@@ -22,14 +22,19 @@ use DocumentApp;
 my $rotate = 4;
 
 if (@ARGV < 3) {
-	warn "budoc <username> <password> <backup/directory> [optional doc ID]\n";
+	warn "budoc <username> <passwordfile> <backup/directory> [optional doc ID]\n";
     exit 1;
 }
+my $passwordfile = $ARGV[1];
+open F, '<', "$passwordfile" or die "Passwordfile $passwordfile not found\n";
+my $password = <F>;
+chomp $password;
+close F;
 
 my $now = Date_ConvTZ(ParseDate("now"), undef, 'Z');
 Date_Init("TZ=Z"); # redefine timezone to same as Google's timestamps
 
-my $docApp = new DocumentApp($ARGV[0], $ARGV[1], 'apidb.org');
+my $docApp = new DocumentApp($ARGV[0], $password, 'apidb.org');
 my $buDir = $ARGV[2];
 my $docIdReq = $ARGV[3];
 
