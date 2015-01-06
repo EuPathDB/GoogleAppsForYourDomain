@@ -41,6 +41,10 @@ my $docIdReq = $ARGV[3];
 die "'$buDir' not found\n" unless ( -d $buDir);
 die "'$buDir' not writable\n" unless ( -w $buDir);
 
+if ( ! -d $buDir . '/1') {
+  mkdir $buDir . '/1';
+}
+
 my %expFormat = (
     document => 'doc',
     spreadsheet => 'xls',
@@ -51,6 +55,8 @@ my $lastBU;
 if (-f "$buDir/.lastrun") {
   open (LAST, "$buDir/.lastrun") || die "could not open $buDir/.lastrun to read timestamp. $!\n";
   while (<LAST>) { chomp; $lastBU = $_; }
+} else {
+  $lastBU = '1970-01-01T20:00:00';
 }
 
 my $didRotate = 0;
@@ -61,7 +67,7 @@ for my $doc (@docs) {
       next unless ($doc->id eq $docIdReq);
     }
 
-    my ($updated) = $doc->updated =~ m/^(.+)[A-Z]+$/; 
+    my ($updated) = $doc->updated =~ m/^(.+)[A-Z]+$/;
     next if ( Date_Cmp($updated, $lastBU) < 0);
 
     $didRotate = rotateBackups($buDir, $rotate) if ! $didRotate;
