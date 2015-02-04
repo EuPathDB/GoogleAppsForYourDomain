@@ -106,15 +106,24 @@ public class DriveBackup {
               * So in the above example the last backup time becomes 9:55 instead of 10:00
               * and the 9:59 File edit gets handled.
               */
-            long msOffset = (5 * 60 * 1000);
+            long lastBackupUnixtimeAdjusted = lastBackupUnixtime - (5 * 60 * 1000);
 
             long fileModifiedUnixTime = file.getModifiedDate().getValue();
 
-            if (fileModifiedUnixTime < (lastBackupUnixtime - msOffset)) {
+            if (
+                fileModifiedUnixTime < lastBackupUnixtimeAdjusted &&
+                backupExists(file)
+              ) {
               logger.debug("Skipping '" + file.getTitle() + "', last modification " + file.getModifiedDate());
               continue;
             }
             
+            /** 
+              At this point, the Doc in play has been modified since the last backup
+              or is not in the backup directory (maybe it failed earlier or was accidentally
+              deleted on disk) so needs to be tried again.
+             */
+
             if (file.getDownloadUrl() != null && file.getDownloadUrl().length() > 0) {
               logger.debug("Downloading doc ... ");
               downloadFile(service, backupDir, file);        
@@ -275,12 +284,11 @@ public class DriveBackup {
   private static void exportFile(Drive service, String backupDir, File file) {
     if (file.getExportLinks() != null && file.getExportLinks().size() > 0) {
       String exportMimeType = getExpMimeTypeForSrcMimeType(file.getMimeType());
-      String fileExt = getFileExtForMimeType(file.getMimeType()) ;
-      String basename = file.getTitle().replaceAll("/", "%2f");
-      String filename = backupDir + "/" + basename + "__[" + file.getId() + "]." + fileExt;
-      fetchAndWriteFile(service, file.getExportLinks().get(exportMimeType), filename);
+      String backupFilePath = getBackupFilePath(file);
+      String url = file.getExportLinks().get(exportMimeType);
+      fetchAndWriteFile(service, url, backupFilePath);
     } else {
-      logger.warn("The file " + file.getTitle() + " doesn't have any content stored on Drive.");
+      logger.warn("The document '" + file.getTitle() + "' doesn't have any content stored on Drive.");
     }
     
   }
@@ -297,11 +305,11 @@ public class DriveBackup {
    */
   private static void downloadFile(Drive service, String backupDir, File file) {
     if (file.getDownloadUrl() != null && file.getDownloadUrl().length() > 0) {
-      String basename = file.getTitle().replaceAll("/", "%2f");
-      String filename = backupDir + "/" + basename;
-      fetchAndWriteFile(service, file.getDownloadUrl(), filename);
+      String backupFilePath = getBackupFilePath(file);
+      String url = file.getDownloadUrl();
+      fetchAndWriteFile(service, url, backupFilePath);
     } else {
-      logger.warn("The file " + file.getTitle() + " doesn't have any content stored on Drive.");
+      logger.warn("The document '" + file.getTitle() + "' doesn't have any content stored on Drive.");
     }
   }
 
@@ -401,4 +409,41 @@ public class DriveBackup {
     }
     return prop;
   }
+
+  /**
+   * Remove invalid file name characters from string.
+   * This encodes '/' so do not pass a full path to this method.
+   *
+   * @param String filename
+   * @return String filename with invalid characters encoded.
+   */
+  private static String cleanFilename(String filename) {
+    return filename.replaceAll("/", "%2f");
+  }
+
+  /**
+    * Construct a path String for the backup file.
+    *
+    * @param File Google Doc file to be backed up
+    * @return String full path name
+    */
+  private static String getBackupFilePath(File file) {
+      String fileExt = getFileExtForMimeType(file.getMimeType());
+      String filename = cleanFilename(file.getTitle());
+      String docId = file.getId();
+      String filepath = backupDir + "/" + filename + "__[" + docId + "]." + fileExt;
+      return filepath;
+  }
+
+  /**
+    * Return true if backup file exists on filesystem.
+    *
+    * @param File to compare for on-disk version.
+    * @return True if corresponding file is found on disk. False otherwise.s
+    */
+  private static boolean backupExists(File file) {
+    java.io.File backupFile = new java.io.File(getBackupFilePath(file));
+    return backupFile.exists();
+  }
+
 }
