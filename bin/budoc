@@ -1,9 +1,8 @@
 #!/usr/bin/perl -w
 
-# change on old copy
 # backup Google documents (spreadsheets, word proc. docs, presentations)
 # that are readable by authenticating user. Only backups files modified since
-# last backup. Format of backups are .doc, .xls, and .ppt
+# last backup. Format of backups are .doc, .xls, .ppt, and .pdf
 
 #
 # $Id: testCalendar 24133 2008-10-13 13:24:33Z mheiges $
@@ -14,29 +13,24 @@ use strict;
 use FindBin;
 use Data::Dumper;
 use lib "$FindBin::Bin/../lib/perl";
-use Date::Manip;
+use DateTime;
 use File::Path;
-use DocumentApp;
+
+my $APPDIR="$FindBin::Bin/..";
 
 # number of rotated backup dirs to maintain
-my $rotate = 4;
+my $max_rotations = 4;
 
-if (@ARGV < 3) {
-	warn "budoc <username> <passwordfile> <backup/directory> [optional doc ID]\n";
-    exit 1;
+if (@ARGV < 1) {
+	warn "budoc <backupDirectory> [optional doc ID]\n";
+	warn "Where <backupDirectory> the base directory where files will be rotated.\n";
+  exit 1;
 }
-my $passwordfile = $ARGV[1];
-open F, '<', "$passwordfile" or die "Passwordfile $passwordfile not found\n";
-my $password = <F>;
-chomp $password;
-close F;
 
-my $now = Date_ConvTZ(ParseDate("now"), undef, 'Z');
-Date_Init("TZ=Z"); # redefine timezone to same as Google's timestamps
+my $now = DateTime->now();
 
-my $docApp = new DocumentApp($ARGV[0], $password, 'apidb.org');
-my $buDir = $ARGV[2];
-my $docIdReq = $ARGV[3];
+my $buDir = $ARGV[0];
+my $home = $ENV{'HOME'};
 
 die "'$buDir' not found\n" unless ( -d $buDir);
 die "'$buDir' not writable\n" unless ( -w $buDir);
@@ -45,56 +39,47 @@ if ( ! -d $buDir . '/1') {
   mkdir $buDir . '/1';
 }
 
-my %expFormat = (
-    document => 'doc',
-    spreadsheet => 'xls',
-    presentation => 'ppt',
-);
-
 my $lastBU;
 if (-f "$buDir/.lastrun") {
   open (LAST, "$buDir/.lastrun") || die "could not open $buDir/.lastrun to read timestamp. $!\n";
   while (<LAST>) { chomp; $lastBU = $_; }
 } else {
-  $lastBU = '1970-01-01T20:00:00';
+  $lastBU = '1970-01-01T20:00:00.000Z';
 }
 
-my $didRotate = 0;
-my @docs = $docApp->retrieveAllDocuments();
-for my $doc (@docs) {
+rotateBackups($buDir, $max_rotations);
 
-    if (defined $docIdReq) {
-      next unless ($doc->id eq $docIdReq);
-    }
-
-    my ($updated) = $doc->updated =~ m/^(.+)[A-Z]+$/;
-    next if ( Date_Cmp($updated, $lastBU) < 0);
-
-    $didRotate = rotateBackups($buDir, $rotate) if ! $didRotate;
-
-    print $doc->title, "\n";
-    my $type = $doc->type;
-    
-    $docApp->export($doc, $expFormat{$type}, $buDir . '/1');
+if ( ! -f "${APPDIR}/build/DriveBackup.class") {
+  system("${APPDIR}/bin/build");
 }
+
+system(<<EOF
+java -classpath ${APPDIR}/:${APPDIR}/lib/java/*:${APPDIR}/lib/java:${APPDIR}/build \\
+  DriveBackup \\
+    -backupDir ${buDir}/1 \\
+    -configFile ${home}/.google/DriveBackup.properties \\
+    -lastBackup ${lastBU} \\
+#    -loglevel DEBUG \\
+EOF
+);
 
 open (LAST, ">$buDir/.lastrun") || die "could not open $buDir/.lastrun to record timestamp. $!\n";
-print LAST UnixDate($now, "%Y-%m-%dT%H:%M:%S");
+print LAST $now->strftime("%FT%T.%3NZ"); # match Google Drive File.getModifiedDate() format (2015-02-03T03:58:26.000Z)
 
 sub rotateBackups {
-    my ($buDir, $rotate) = @_;
+    my ($buDir, $max_rotations) = @_;
     
     return if (! $buDir || $buDir eq '' || $buDir eq '/');
-    my $maxDir = $buDir . '/' . $rotate;
-    if (-d $maxDir) {
-        rename ($maxDir, $maxDir . '_')  || die "can not rename '$maxDir' to ${maxDir}_\n";
-    }
+    my $maxDir = $buDir . '/' . $max_rotations;
+    #if (-d $maxDir) {
+    #    rename ($maxDir, $maxDir . '_')  || die "can not rename '$maxDir' to ${maxDir}_\n";
+    #}
     File::Path::rmtree($maxDir . '_') if (-d $maxDir . '_');
-    for (my $i = $rotate -1; $i > 0; $i--) {
+    for (my $i = $max_rotations -1; $i > 0; $i--) {
         my $back = $buDir . '/' . $i . '/';
         my $dest = $buDir . '/' . ($i +1);
         if (-d $buDir . '/' . $i) {
-            system("rsync -a --link-dest=$back $back $dest");
+            system("rsync -a --delete --link-dest=$back $back $dest");
         }
     }
     return 1;

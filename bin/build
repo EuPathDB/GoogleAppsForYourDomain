@@ -1,0 +1,10 @@
+#!/bin/bash
+
+BINDIR="$(dirname "$(readlink -f "$0")")"
+BASE="$(readlink -f "$BINDIR/..")"
+
+if [[ ! -d "$BASE/build" ]];
+  then mkdir "$BASE/build";
+fi
+
+javac -classpath "$BASE/lib/java/*" -d "$BASE/build" "$BASE/src/java/DriveBackup.java"

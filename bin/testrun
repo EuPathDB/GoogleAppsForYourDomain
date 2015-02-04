@@ -1,0 +1,10 @@
+#!/bin/bash
+
+BINDIR="$(dirname "$(readlink -f "$0")")"
+BASE="$(readlink -f "$BINDIR/..")"
+
+java -classpath $BASE/:$BASE/lib/java/*:$BASE/lib/java:$BASE/build \
+  DriveBackup \
+    -backupDir /home/mheiges/foo/1 \
+    -lastBackup 2015-02-03T04:50:46.000Z \
+    -loglevel DEBUG \
