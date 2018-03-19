@@ -19,7 +19,7 @@ use File::Path;
 my $APPDIR="$FindBin::Bin/..";
 
 # number of rotated backup dirs to maintain
-my $max_rotations = 4;
+my $max_rotations = 14;
 
 if (@ARGV < 1) {
 	warn "budoc <backupDirectory> [optional doc ID]\n";
