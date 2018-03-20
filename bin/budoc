@@ -15,6 +15,7 @@ use Data::Dumper;
 use lib "$FindBin::Bin/../lib/perl";
 use DateTime;
 use File::Path;
+use Getopt::Long;
 
 my $APPDIR="$FindBin::Bin/..";
 
@@ -31,6 +32,9 @@ my $now = DateTime->now();
 
 my $buDir = $ARGV[0];
 my $home = $ENV{'HOME'};
+
+my $configFile = "${home}/.google/DriveBackup.properties";
+GetOptions ( "configFile=s" => \$configFile, );
 
 die "'$buDir' not found\n" unless ( -d $buDir);
 die "'$buDir' not writable\n" unless ( -w $buDir);
@@ -57,7 +61,7 @@ system(<<EOF
 java -classpath ${APPDIR}/:${APPDIR}/lib/java/*:${APPDIR}/lib/java:${APPDIR}/build \\
   DriveBackup \\
     -backupDir ${buDir}/1 \\
-    -configFile ${home}/.google/DriveBackup.properties \\
+    -configFile ${configFile} \\
     -lastBackup ${lastBU} \\
 #    -loglevel DEBUG \\
 EOF
